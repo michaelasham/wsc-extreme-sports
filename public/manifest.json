@@ -1,0 +1,18 @@
+{
+  "name": "WSC Extreme Sports Arena",
+  "short_name": "WSC Arena",
+  "description": "AI-powered cabin scoring demo for WSC Extreme Sports",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#07080f",
+  "theme_color": "#07080f",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

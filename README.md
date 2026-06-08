@@ -1,36 +1,71 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# WSC Extreme Sports Arena
+
+A polished PWA demo for **WSC Extreme Sports** — an AI-powered Rage Meter and Cabin Clash leaderboard system built for camp director approval.
+
+## Demo Purpose
+
+This is a **presentation demo**, not the final production app. It showcases how the Rage Room scoring flow, AI judge results, and cabin leaderboard will look and feel during camp.
+
+- **Current version** uses local mock data only (`src/lib/demo-data.ts`)
+- **Future version** will connect to AI photo/video judging, QR/RFID camper scan-in, and Supabase for persistence
+- **Staff will always have final override** — scores can be adjusted before confirmation and saving
+
+## Screens
+
+| Route | Description |
+|-------|-------------|
+| `/` | Demo control panel — launch any demo screen |
+| `/rage-room` | Dramatic Rage Meter result reveal with score breakdown |
+| `/leaderboard` | Cabin & camper leaderboards with mode toggle |
+| `/session-review` | AI judge media review with before/after placeholders and notes |
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000). Install to home screen on mobile for the full PWA experience.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run build
+npm start
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Architecture
 
-## Learn More
+```
+src/
+├── app/                  # Next.js App Router pages
+├── components/           # Reusable UI components
+│   ├── AnimatedRageMeter.tsx
+│   ├── RageResultCard.tsx
+│   ├── LeaderboardToggle.tsx
+│   ├── CabinLeaderboard.tsx
+│   ├── CamperLeaderboard.tsx
+│   ├── SessionMediaReview.tsx
+│   ├── Badge.tsx
+│   └── DemoNavigation.tsx
+├── hooks/                # Animation hooks (useCountUp, useInView)
+└── lib/
+    ├── demo-data.ts      # All mock data — swap for API calls later
+    └── types.ts          # Shared TypeScript interfaces
+```
 
-To learn more about Next.js, take a look at the following resources:
+Components are designed to accept typed props from `demo-data.ts` today and from API/Supabase responses tomorrow without structural changes.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Tech Stack
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Next.js App Router
+- TypeScript
+- Tailwind CSS v4
+- Framer Motion (meter fill, leaderboard transitions)
+- No backend (mock data only)
 
-## Deploy on Vercel
+## Future Integration Points
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **AI Scoring API** — replace mock scores with before/after photo or video analysis
+- **Supabase** — persist sessions, cabins, campers, and confirmed scores
+- **QR/RFID scan** — identify camper and cabin at Rage Room entry
+- **Staff override panel** — wire "Adjust Score" to an admin form backed by real data
