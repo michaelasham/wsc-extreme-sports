@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { randomUUID } from "crypto";
 import sharp from "sharp";
 import { db } from "@/lib/db";
-import { rageSessions, media, campers } from "@/lib/db/schema";
+import { rageSessions, media, campers, sessionHighlights } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import * as storage from "@/lib/storage";
 import { scoreSession, computePoints } from "@/lib/scoring";
@@ -12,6 +12,13 @@ import { getCabinRank } from "@/lib/queries";
 import { getAuthSession } from "@/lib/session";
 
 const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
+
+function pickEvenly<T>(arr: T[], count: number): T[] {
+  if (arr.length <= count) return arr;
+  return Array.from({ length: count }, (_, i) =>
+    arr[Math.round((i * (arr.length - 1)) / (count - 1))]
+  );
+}
 const MAX_BYTES = 50 * 1024 * 1024;
 
 async function processAndStoreImage(
@@ -74,13 +81,12 @@ export async function createRageSession(formData: FormData): Promise<string> {
   if (!cabinId || !camperName) throw new Error("Missing cabin or camper name");
   if (!beforeFile || !afterFile) throw new Error("Both before and after photos are required");
 
-  // Up to 3 evenly-spaced highlight frames (canvas JPEG blobs)
-  const highlightBufs: Buffer[] = [];
-  for (let i = 0; i < 3; i++) {
+  // Collect all highlight frames sent from the client
+  const highlightFiles: File[] = [];
+  for (let i = 0; ; i++) {
     const f = formData.get(`highlight${i}`) as File | null;
-    if (f && f.size > 0) {
-      highlightBufs.push(Buffer.from(await f.arrayBuffer()));
-    }
+    if (!f || f.size === 0) break;
+    highlightFiles.push(f);
   }
 
   const sessionId = randomUUID();
@@ -99,10 +105,20 @@ export async function createRageSession(formData: FormData): Promise<string> {
 
   let aiResult: import("@/lib/scoring").AiScoreResult;
   try {
+    // Pick 3 evenly-spaced highlight bufs to send to Gemini
+    const geminiHighlights =
+      highlightFiles.length === 0
+        ? []
+        : await Promise.all(
+            pickEvenly(highlightFiles, 3).map((f) =>
+              f.arrayBuffer().then((ab) => Buffer.from(ab))
+            )
+          );
+
     aiResult = await scoreSession({
       beforeBuf: beforeData.buf,
       afterBuf: afterData.buf,
-      highlightBufs: highlightBufs.length > 0 ? highlightBufs : undefined,
+      highlightBufs: geminiHighlights.length > 0 ? geminiHighlights : undefined,
       cabinName: cabinRow.name,
       camperName,
     });
@@ -140,6 +156,41 @@ export async function createRageSession(formData: FormData): Promise<string> {
     totalScore: aiResult.points,
     manualAdjustment: 0,
   });
+
+  // Store all highlight images and link them to the session
+  if (highlightFiles.length > 0) {
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+
+    for (let i = 0; i < highlightFiles.length; i++) {
+      const f = highlightFiles[i];
+      const rawBuf = Buffer.from(await f.arrayBuffer());
+      const processed = await sharp(rawBuf)
+        .resize({ width: 1280, height: 1280, fit: "inside", withoutEnlargement: true })
+        .webp({ quality: 80 })
+        .toBuffer();
+      const meta = await sharp(processed).metadata();
+      const fileId = randomUUID();
+      const relPath = `${yyyy}/${mm}/${sessionId}-highlight-${i}-${fileId}.webp`;
+      storage.put(relPath, processed);
+      const mediaId = randomUUID();
+      await db.insert(media).values({
+        id: mediaId,
+        relPath,
+        mime: "image/webp",
+        width: meta.width ?? null,
+        height: meta.height ?? null,
+        bytes: processed.length,
+      });
+      await db.insert(sessionHighlights).values({
+        id: randomUUID(),
+        sessionId,
+        mediaId,
+        captureOrder: i,
+      });
+    }
+  }
 
   return sessionId;
 }

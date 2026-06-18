@@ -303,22 +303,15 @@ export function NewSessionForm({ cabins }: { cabins: Cabin[] }) {
         formData.set("before", beforeFile);
         formData.set("after", afterFile);
 
-        // Pick 3 evenly spaced highlights and append as Blobs
-        const hl = capture.highlights;
-        if (hl.length > 0) {
-          const picks =
-            hl.length <= 3
-              ? hl
-              : [0, 1, 2].map((i) => hl[Math.round((i * (hl.length - 1)) / 2)]);
-          picks.forEach((h, i) => {
-            const [header, b64] = h.dataUrl.split(",");
-            const mime = header.match(/:(.*?);/)?.[1] ?? "image/jpeg";
-            const bytes = atob(b64);
-            const arr = new Uint8Array(bytes.length);
-            for (let j = 0; j < bytes.length; j++) arr[j] = bytes.charCodeAt(j);
-            formData.set(`highlight${i}`, new Blob([arr], { type: mime }));
-          });
-        }
+        // Append all highlights — server picks evenly-spaced subset for Gemini and stores all
+        capture.highlights.forEach((h, i) => {
+          const [header, b64] = h.dataUrl.split(",");
+          const mime = header.match(/:(.*?);/)?.[1] ?? "image/jpeg";
+          const bytes = atob(b64);
+          const arr = new Uint8Array(bytes.length);
+          for (let j = 0; j < bytes.length; j++) arr[j] = bytes.charCodeAt(j);
+          formData.set(`highlight${i}`, new Blob([arr], { type: mime }));
+        });
 
         startTransition(async () => {
           try {

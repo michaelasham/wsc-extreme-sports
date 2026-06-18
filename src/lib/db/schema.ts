@@ -74,6 +74,18 @@ export const rageSessions = pgTable("rage_sessions", {
   confirmedAt: timestamp("confirmed_at"),
 });
 
+export const sessionHighlights = pgTable("session_highlights", {
+  id: text("id").primaryKey(),
+  sessionId: text("session_id")
+    .notNull()
+    .references(() => rageSessions.id, { onDelete: "cascade" }),
+  mediaId: text("media_id")
+    .notNull()
+    .references(() => media.id),
+  captureOrder: integer("capture_order").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export type Cabin = typeof cabins.$inferSelect;
 export type Camper = typeof campers.$inferSelect;
 export type Media = typeof media.$inferSelect;
