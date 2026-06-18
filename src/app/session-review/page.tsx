@@ -17,7 +17,7 @@ export default async function SessionReviewPage({ searchParams }: Props) {
   const cabinLabel = result
     ? `Cabin ${result.cabin.number} — ${result.cabin.name}`
     : "—";
-  const notes = result?.aiNotes ?? [];
+  const notes = result?.analysis ?? [];
   const sessionData = result as (typeof result & {
     beforeImagePath?: string;
     afterImagePath?: string;

@@ -29,16 +29,19 @@ export interface Camper {
   isHighlighted?: boolean;
 }
 
+export interface AiBadge {
+  name: string;
+  description: string;
+}
+
 export interface ScoreBreakdown {
-  rageScore: number;
-  rageScoreMax: number;
-  destructionLevel: number;
-  teamEnergy: number;
-  teamEnergyMax: number;
-  safetyDiscipline: number;
-  safetyDisciplineMax: number;
-  creativityBonus: number;
-  totalScore: number;
+  targetCompletion: number;
+  destructionSeverity: number;
+  impactScore: number;
+  debrisSpread: number;
+  overallScore: number;
+  points: number;
+  manualAdjustment: number;
 }
 
 export interface RankMovement {
@@ -52,7 +55,10 @@ export interface SessionResult {
   camper: string;
   scores: ScoreBreakdown;
   rankMovement: RankMovement;
-  aiNotes: string[];
+  confidence: number;
+  analysis: string[];
+  badges: AiBadge[];
+  improvementTips: string[];
   sessionComplete: boolean;
 }
 

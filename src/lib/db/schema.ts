@@ -5,6 +5,7 @@ import {
   real,
   timestamp,
   pgEnum,
+  jsonb,
 } from "drizzle-orm/pg-core";
 
 export const sessionStatusEnum = pgEnum("session_status", [
@@ -53,24 +54,22 @@ export const rageSessions = pgTable("rage_sessions", {
   beforeMediaId: text("before_media_id").references(() => media.id),
   afterMediaId: text("after_media_id").references(() => media.id),
 
-  // AI raw output (immutable)
-  aiRageScore: real("ai_rage_score"),
-  aiDestructionLevel: real("ai_destruction_level"),
-  aiTeamEnergy: real("ai_team_energy"),
-  aiSafetyDiscipline: real("ai_safety_discipline"),
-  aiCreativityBonus: integer("ai_creativity_bonus"),
-  aiNotes: text("ai_notes").array(),
+  // AI scores (immutable after creation)
+  aiTargetCompletion: integer("ai_target_completion"),
+  aiDestructionSeverity: integer("ai_destruction_severity"),
+  aiImpactScore: real("ai_impact_score"),
+  aiDebrisSpread: integer("ai_debris_spread"),
+  aiOverallScore: real("ai_overall_score"),
+  aiConfidence: real("ai_confidence"),
+  aiAnalysis: text("ai_analysis").array(),
+  aiBadges: jsonb("ai_badges"),
+  aiImprovementTips: text("ai_improvement_tips").array(),
 
-  // Staff-overridable final values
-  finalRageScore: real("final_rage_score"),
-  finalDestructionLevel: real("final_destruction_level"),
-  finalTeamEnergy: real("final_team_energy"),
-  finalSafetyDiscipline: real("final_safety_discipline"),
-  finalCreativityBonus: integer("final_creativity_bonus"),
+  // Points: AI points + staff manual adjustment
   totalScore: integer("total_score"),
+  manualAdjustment: integer("manual_adjustment").notNull().default(0),
 
   previousRank: integer("previous_rank"),
-
   createdAt: timestamp("created_at").defaultNow().notNull(),
   confirmedAt: timestamp("confirmed_at"),
 });

@@ -108,30 +108,33 @@ export const latestSessionResult: SessionResult = {
   cabin: cabins.find((c) => c.number === 7)!,
   camper: "Daniel N.",
   scores: {
-    rageScore: 8.7,
-    rageScoreMax: 10,
-    destructionLevel: 92,
-    teamEnergy: 9.1,
-    teamEnergyMax: 10,
-    safetyDiscipline: 8.4,
-    safetyDisciplineMax: 10,
-    creativityBonus: 50,
-    totalScore: 920,
+    targetCompletion: 72,
+    destructionSeverity: 68,
+    impactScore: 6.5,
+    debrisSpread: 55,
+    overallScore: 68.5,
+    points: 685,
+    manualAdjustment: 0,
   },
   rankMovement: {
     previousRank: 8,
     currentRank: 4,
   },
-  aiNotes: [
-    "High destruction completion",
-    "Strong team energy",
-    "No unsafe behavior detected",
-    "Creativity bonus awarded for coordinated team challenge",
+  confidence: 0.91,
+  analysis: [
+    "Primary target shows heavy structural damage.",
+    "Debris visible across most of the visible floor area.",
+    "Object broken into multiple large pieces.",
+  ],
+  badges: [{ name: "Wide Impact Zone", description: "Debris spread across most of the room." }],
+  improvementTips: [
+    "Focus on achieving full structural collapse of the target.",
+    "Increase variety of objects targeted.",
   ],
   sessionComplete: true,
 };
 
-export const aiJudgeNotes = latestSessionResult.aiNotes;
+export const aiJudgeNotes = latestSessionResult.analysis;
 
 export const demoNavItems: DemoNavItem[] = [
   {

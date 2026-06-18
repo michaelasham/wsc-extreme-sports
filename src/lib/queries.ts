@@ -1,7 +1,7 @@
 import { db } from "./db";
-import { cabins, campers, rageSessions, media } from "./db/schema";
-import { eq, sql, desc } from "drizzle-orm";
-import type { Cabin, Camper, SessionResult } from "./types";
+import { cabins, campers, rageSessions } from "./db/schema";
+import { eq, sql } from "drizzle-orm";
+import type { AiBadge, Cabin, Camper, SessionResult } from "./types";
 
 export async function getCabinLeaderboard(): Promise<Cabin[]> {
   const rows = await db.execute(sql`
@@ -77,21 +77,23 @@ export async function getSessionResult(sessionId: string): Promise<SessionResult
     SELECT
       s.id,
       s.status,
-      s.final_rage_score,
-      s.final_destruction_level,
-      s.final_team_energy,
-      s.final_safety_discipline,
-      s.final_creativity_bonus,
+      s.ai_target_completion,
+      s.ai_destruction_severity,
+      s.ai_impact_score,
+      s.ai_debris_spread,
+      s.ai_overall_score,
+      s.ai_confidence,
+      s.ai_analysis,
+      s.ai_badges,
+      s.ai_improvement_tips,
       s.total_score,
-      s.ai_notes,
+      s.manual_adjustment,
       s.previous_rank,
       camp.name AS camper_name,
       c.id AS cabin_id,
       c.number AS cabin_number,
       c.name AS cabin_name,
       c.mascot AS cabin_mascot,
-      bm.rel_path AS before_path,
-      am.rel_path AS after_path,
       (
         SELECT ROW_NUMBER() OVER (ORDER BY COALESCE(SUM(s2.total_score), 0) DESC)
         FROM cabins c2
@@ -102,8 +104,6 @@ export async function getSessionResult(sessionId: string): Promise<SessionResult
     FROM rage_sessions s
     JOIN campers camp ON camp.id = s.camper_id
     JOIN cabins c ON c.id = s.cabin_id
-    LEFT JOIN media bm ON bm.id = s.before_media_id
-    LEFT JOIN media am ON am.id = s.after_media_id
     WHERE s.id = ${sessionId}
     LIMIT 1
   `);
@@ -133,25 +133,21 @@ export async function getSessionResult(sessionId: string): Promise<SessionResult
     },
     camper: r.camper_name as string,
     scores: {
-      rageScore: Number(r.final_rage_score ?? 0),
-      rageScoreMax: 10,
-      destructionLevel: Number(r.final_destruction_level ?? 0),
-      teamEnergy: Number(r.final_team_energy ?? 0),
-      teamEnergyMax: 10,
-      safetyDiscipline: Number(r.final_safety_discipline ?? 0),
-      safetyDisciplineMax: 10,
-      creativityBonus: Number(r.final_creativity_bonus ?? 0),
-      totalScore: Number(r.total_score ?? 0),
+      targetCompletion: Number(r.ai_target_completion ?? 0),
+      destructionSeverity: Number(r.ai_destruction_severity ?? 0),
+      impactScore: Number(r.ai_impact_score ?? 0),
+      debrisSpread: Number(r.ai_debris_spread ?? 0),
+      overallScore: Number(r.ai_overall_score ?? 0),
+      points: Number(r.total_score ?? 0),
+      manualAdjustment: Number(r.manual_adjustment ?? 0),
     },
-    rankMovement: {
-      previousRank,
-      currentRank,
-    },
-    aiNotes: (r.ai_notes as string[]) ?? [],
+    rankMovement: { previousRank, currentRank },
+    confidence: Number(r.ai_confidence ?? 0),
+    analysis: (r.ai_analysis as string[]) ?? [],
+    badges: (r.ai_badges as AiBadge[]) ?? [],
+    improvementTips: (r.ai_improvement_tips as string[]) ?? [],
     sessionComplete: r.status === "confirmed",
-    beforeImagePath: r.before_path ? String(r.before_path) : undefined,
-    afterImagePath: r.after_path ? String(r.after_path) : undefined,
-  } as SessionResult & { beforeImagePath?: string; afterImagePath?: string };
+  };
 }
 
 export async function getCabinRank(cabinId: string): Promise<number> {

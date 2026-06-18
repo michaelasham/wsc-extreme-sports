@@ -45,7 +45,7 @@ export default async function SessionRagePage(
             </Link>
           </>
         ) : (
-          <ConfirmResultButton sessionId={sessionId} />
+          <ConfirmResultButton sessionId={sessionId} aiPoints={result.scores.points} />
         )}
       </div>
     </PageShell>

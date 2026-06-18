@@ -7,12 +7,12 @@ import { db } from "@/lib/db";
 import { rageSessions, media, campers } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import * as storage from "@/lib/storage";
-import { scoreSession, computeTotalScore } from "@/lib/scoring";
+import { scoreSession, computePoints } from "@/lib/scoring";
 import { getCabinRank } from "@/lib/queries";
 import { getAuthSession } from "@/lib/session";
 
 const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
-const MAX_BYTES = 15 * 1024 * 1024;
+const MAX_BYTES = 50 * 1024 * 1024;
 
 async function processAndStoreImage(
   file: File,
@@ -20,11 +20,11 @@ async function processAndStoreImage(
   slot: "before" | "after"
 ): Promise<{ mediaId: string; relPath: string; buf: Buffer }> {
   if (!ALLOWED_MIME.has(file.type)) throw new Error(`Unsupported type: ${file.type}`);
-  if (file.size > MAX_BYTES) throw new Error("Image too large (max 15MB)");
+  if (file.size > MAX_BYTES) throw new Error("Image too large (max 50MB)");
 
   const rawBuf = Buffer.from(await file.arrayBuffer());
   const processed = await sharp(rawBuf)
-    .rotate() // auto-orient from EXIF
+    .rotate()
     .resize({ width: 1600, height: 1600, fit: "inside", withoutEnlargement: true })
     .webp({ quality: 85 })
     .toBuffer();
@@ -74,6 +74,15 @@ export async function createRageSession(formData: FormData): Promise<string> {
   if (!cabinId || !camperName) throw new Error("Missing cabin or camper name");
   if (!beforeFile || !afterFile) throw new Error("Both before and after photos are required");
 
+  // Up to 3 evenly-spaced highlight frames (canvas JPEG blobs)
+  const highlightBufs: Buffer[] = [];
+  for (let i = 0; i < 3; i++) {
+    const f = formData.get(`highlight${i}`) as File | null;
+    if (f && f.size > 0) {
+      highlightBufs.push(Buffer.from(await f.arrayBuffer()));
+    }
+  }
+
   const sessionId = randomUUID();
 
   const [beforeData, afterData] = await Promise.all([
@@ -88,26 +97,28 @@ export async function createRageSession(formData: FormData): Promise<string> {
 
   const camperId = await findOrCreateCamper(camperName, cabinId);
 
-  let aiResult: import("@/lib/scoring").ScoreBreakdownResult;
+  let aiResult: import("@/lib/scoring").AiScoreResult;
   try {
     aiResult = await scoreSession({
       beforeBuf: beforeData.buf,
       afterBuf: afterData.buf,
+      highlightBufs: highlightBufs.length > 0 ? highlightBufs : undefined,
       cabinName: cabinRow.name,
       camperName,
     });
   } catch (err) {
     console.error("Gemini scoring failed:", err);
-    // Fallback: neutral scores so staff can manually enter
-    const fallback = {
-      rageScore: 5,
-      destructionLevel: 50,
-      teamEnergy: 5,
-      safetyDiscipline: 5,
-      creativityBonus: 0,
-      notes: ["AI scoring unavailable — please enter scores manually."],
+    const fallback = { targetCompletion: 0, destructionSeverity: 0, impactScore: 0, debrisSpread: 0 };
+    const { overallScore, points } = computePoints(fallback);
+    aiResult = {
+      ...fallback,
+      overallScore,
+      points,
+      confidence: 0,
+      analysis: ["AI scoring unavailable — staff review required."],
+      badges: [],
+      improvementTips: [],
     };
-    aiResult = { ...fallback, totalScore: computeTotalScore(fallback) };
   }
 
   await db.insert(rageSessions).values({
@@ -117,52 +128,26 @@ export async function createRageSession(formData: FormData): Promise<string> {
     status: "pending",
     beforeMediaId: beforeData.mediaId,
     afterMediaId: afterData.mediaId,
-    aiRageScore: aiResult.rageScore,
-    aiDestructionLevel: aiResult.destructionLevel,
-    aiTeamEnergy: aiResult.teamEnergy,
-    aiSafetyDiscipline: aiResult.safetyDiscipline,
-    aiCreativityBonus: aiResult.creativityBonus,
-    aiNotes: aiResult.notes,
-    finalRageScore: aiResult.rageScore,
-    finalDestructionLevel: aiResult.destructionLevel,
-    finalTeamEnergy: aiResult.teamEnergy,
-    finalSafetyDiscipline: aiResult.safetyDiscipline,
-    finalCreativityBonus: aiResult.creativityBonus,
-    totalScore: aiResult.totalScore,
+    aiTargetCompletion: aiResult.targetCompletion,
+    aiDestructionSeverity: aiResult.destructionSeverity,
+    aiImpactScore: aiResult.impactScore,
+    aiDebrisSpread: aiResult.debrisSpread,
+    aiOverallScore: aiResult.overallScore,
+    aiConfidence: aiResult.confidence,
+    aiAnalysis: aiResult.analysis,
+    aiBadges: aiResult.badges,
+    aiImprovementTips: aiResult.improvementTips,
+    totalScore: aiResult.points,
+    manualAdjustment: 0,
   });
 
   return sessionId;
 }
 
-export async function updateSessionScores(
+export async function confirmSession(
   sessionId: string,
-  scores: {
-    rageScore: number;
-    destructionLevel: number;
-    teamEnergy: number;
-    safetyDiscipline: number;
-    creativityBonus: number;
-  }
+  manualAdjustment = 0
 ): Promise<void> {
-  const authed = await getAuthSession();
-  if (!authed) throw new Error("Unauthorized");
-
-  const totalScore = computeTotalScore(scores);
-
-  await db
-    .update(rageSessions)
-    .set({
-      finalRageScore: scores.rageScore,
-      finalDestructionLevel: scores.destructionLevel,
-      finalTeamEnergy: scores.teamEnergy,
-      finalSafetyDiscipline: scores.safetyDiscipline,
-      finalCreativityBonus: scores.creativityBonus,
-      totalScore,
-    })
-    .where(eq(rageSessions.id, sessionId));
-}
-
-export async function confirmSession(sessionId: string): Promise<void> {
   const authed = await getAuthSession();
   if (!authed) throw new Error("Unauthorized");
 
@@ -172,6 +157,8 @@ export async function confirmSession(sessionId: string): Promise<void> {
   if (!session) throw new Error("Session not found");
 
   const previousRank = await getCabinRank(session.cabinId);
+  const adj = Math.max(-500, Math.min(500, Math.round(manualAdjustment)));
+  const finalScore = Math.max(0, (session.totalScore ?? 0) + adj);
 
   await db
     .update(rageSessions)
@@ -179,6 +166,8 @@ export async function confirmSession(sessionId: string): Promise<void> {
       status: "confirmed",
       confirmedAt: new Date(),
       previousRank,
+      manualAdjustment: adj,
+      totalScore: finalScore,
     })
     .where(eq(rageSessions.id, sessionId));
 

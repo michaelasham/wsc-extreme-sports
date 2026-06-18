@@ -70,7 +70,7 @@ export function AnimatedRageMeter({
     <div ref={ref} className="w-full">
       <div className="mb-4 text-center sm:mb-6">
         <p className="text-xs font-semibold uppercase tracking-[0.35em] text-orange-400/80 sm:text-sm">
-          Rage Meter
+          Mission Score
         </p>
         <p className="mt-2 font-mono text-5xl font-black tabular-nums text-white sm:text-6xl lg:text-7xl">
           {displayScore.toFixed(1)}
@@ -80,7 +80,7 @@ export function AnimatedRageMeter({
           </span>
         </p>
         <p className="mt-2 text-sm font-semibold text-orange-300 sm:text-base">
-          {displayPercent.toFixed(0)}% Rage Capacity
+          {displayPercent.toFixed(0)}% Mission Complete
         </p>
       </div>
 
@@ -93,7 +93,7 @@ export function AnimatedRageMeter({
         >
           <div className="canister-cap">
             <div className="canister-cap-inner" />
-            <span className="canister-label">Rage Meter</span>
+            <span className="canister-label">Mission Meter</span>
           </div>
 
           <div className="canister-body">
@@ -140,7 +140,7 @@ export function AnimatedRageMeter({
           </div>
 
           <div className="canister-base">
-            <span className="canister-sublabel">Destruction Core</span>
+            <span className="canister-sublabel">Impact Core</span>
           </div>
         </div>
       </div>
