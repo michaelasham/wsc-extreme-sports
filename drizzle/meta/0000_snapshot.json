@@ -1,0 +1,384 @@
+{
+  "id": "a77ef8bb-dc1c-4ea8-b9d9-a649d7c08651",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.cabins": {
+      "name": "cabins",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "number": {
+          "name": "number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mascot": {
+          "name": "mascot",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "cabins_number_unique": {
+          "name": "cabins_number_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "number"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.campers": {
+      "name": "campers",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cabin_id": {
+          "name": "cabin_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "campers_cabin_id_cabins_id_fk": {
+          "name": "campers_cabin_id_cabins_id_fk",
+          "tableFrom": "campers",
+          "tableTo": "cabins",
+          "columnsFrom": [
+            "cabin_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.media": {
+      "name": "media",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "rel_path": {
+          "name": "rel_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mime": {
+          "name": "mime",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "width": {
+          "name": "width",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "height": {
+          "name": "height",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "bytes": {
+          "name": "bytes",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.rage_sessions": {
+      "name": "rage_sessions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "cabin_id": {
+          "name": "cabin_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "camper_id": {
+          "name": "camper_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "session_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "before_media_id": {
+          "name": "before_media_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "after_media_id": {
+          "name": "after_media_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ai_rage_score": {
+          "name": "ai_rage_score",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ai_destruction_level": {
+          "name": "ai_destruction_level",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ai_team_energy": {
+          "name": "ai_team_energy",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ai_safety_discipline": {
+          "name": "ai_safety_discipline",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ai_creativity_bonus": {
+          "name": "ai_creativity_bonus",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ai_notes": {
+          "name": "ai_notes",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "final_rage_score": {
+          "name": "final_rage_score",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "final_destruction_level": {
+          "name": "final_destruction_level",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "final_team_energy": {
+          "name": "final_team_energy",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "final_safety_discipline": {
+          "name": "final_safety_discipline",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "final_creativity_bonus": {
+          "name": "final_creativity_bonus",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "total_score": {
+          "name": "total_score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "previous_rank": {
+          "name": "previous_rank",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "confirmed_at": {
+          "name": "confirmed_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "rage_sessions_cabin_id_cabins_id_fk": {
+          "name": "rage_sessions_cabin_id_cabins_id_fk",
+          "tableFrom": "rage_sessions",
+          "tableTo": "cabins",
+          "columnsFrom": [
+            "cabin_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "rage_sessions_camper_id_campers_id_fk": {
+          "name": "rage_sessions_camper_id_campers_id_fk",
+          "tableFrom": "rage_sessions",
+          "tableTo": "campers",
+          "columnsFrom": [
+            "camper_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "rage_sessions_before_media_id_media_id_fk": {
+          "name": "rage_sessions_before_media_id_media_id_fk",
+          "tableFrom": "rage_sessions",
+          "tableTo": "media",
+          "columnsFrom": [
+            "before_media_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "rage_sessions_after_media_id_media_id_fk": {
+          "name": "rage_sessions_after_media_id_media_id_fk",
+          "tableFrom": "rage_sessions",
+          "tableTo": "media",
+          "columnsFrom": [
+            "after_media_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.session_status": {
+      "name": "session_status",
+      "schema": "public",
+      "values": [
+        "pending",
+        "confirmed",
+        "discarded"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

@@ -4,6 +4,8 @@ interface SessionMediaReviewProps {
   notes?: string[];
   camper?: string;
   cabinLabel?: string;
+  beforeImageUrl?: string;
+  afterImageUrl?: string;
 }
 
 function MediaPlaceholder({
@@ -44,10 +46,21 @@ function MediaPlaceholder({
   );
 }
 
+function RealImage({ src, label }: { src: string; label: string }) {
+  return (
+    <div className="overflow-hidden rounded-2xl aspect-[4/3] bg-black">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={src} alt={label} className="h-full w-full object-cover" />
+    </div>
+  );
+}
+
 export function SessionMediaReview({
   notes = aiJudgeNotes,
   camper = "Daniel N.",
   cabinLabel = "Cabin 7 — Lions",
+  beforeImageUrl,
+  afterImageUrl,
 }: SessionMediaReviewProps) {
   return (
     <div className="w-full space-y-6">
@@ -64,8 +77,16 @@ export function SessionMediaReview({
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <MediaPlaceholder label="Before Photo" type="before" />
-        <MediaPlaceholder label="After Photo" type="after" />
+        {beforeImageUrl ? (
+          <RealImage src={beforeImageUrl} label="Before Photo" />
+        ) : (
+          <MediaPlaceholder label="Before Photo" type="before" />
+        )}
+        {afterImageUrl ? (
+          <RealImage src={afterImageUrl} label="After Photo" />
+        ) : (
+          <MediaPlaceholder label="After Photo" type="after" />
+        )}
       </div>
 
       <MediaPlaceholder label="Video Clip (Optional)" type="video" aspect="video" />

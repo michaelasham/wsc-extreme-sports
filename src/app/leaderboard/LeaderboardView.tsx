@@ -6,10 +6,14 @@ import { CabinLeaderboard } from "@/components/CabinLeaderboard";
 import { CamperLeaderboard } from "@/components/CamperLeaderboard";
 import { LeaderboardToggle } from "@/components/LeaderboardToggle";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
-import { cabins, campers } from "@/lib/demo-data";
-import type { LeaderboardMode } from "@/lib/types";
+import type { Cabin, Camper, LeaderboardMode } from "@/lib/types";
 
-export function LeaderboardView() {
+interface LeaderboardViewProps {
+  cabins: Cabin[];
+  campers: Camper[];
+}
+
+export function LeaderboardView({ cabins, campers }: LeaderboardViewProps) {
   const [mode, setMode] = useState<LeaderboardMode>("cabin");
   const reducedMotion = usePrefersReducedMotion();
 
@@ -30,7 +34,7 @@ export function LeaderboardView() {
         </div>
         <p className="text-sm text-white/50 lg:text-base">
           Last updated:{" "}
-          <span className="font-medium text-emerald-400">Live demo</span>
+          <span className="font-medium text-emerald-400">Live</span>
         </p>
       </div>
 

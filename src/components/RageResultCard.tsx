@@ -9,6 +9,7 @@ import type { SessionResult } from "@/lib/types";
 
 interface RageResultCardProps {
   result: SessionResult;
+  hideActions?: boolean;
 }
 
 interface SubMetricProps {
@@ -63,7 +64,7 @@ function AnimatedSubMetric({
   return <SubMetric label={label} value={formatted} />;
 }
 
-export function RageResultCard({ result }: RageResultCardProps) {
+export function RageResultCard({ result, hideActions = false }: RageResultCardProps) {
   const [confirmed, setConfirmed] = useState(false);
   const [showAdjust, setShowAdjust] = useState(false);
   const { cabin, scores, rankMovement } = result;
@@ -143,37 +144,38 @@ export function RageResultCard({ result }: RageResultCardProps) {
         </div>
       </div>
 
-      {/* Action buttons */}
-      <div className="mx-auto mt-8 flex max-w-md flex-col gap-3 sm:mt-10 lg:max-w-lg">
-        <button
-          type="button"
-          onClick={() => setShowAdjust(!showAdjust)}
-          className="btn-secondary w-full"
-        >
-          Adjust Score
-        </button>
+      {!hideActions && (
+        <div className="mx-auto mt-8 flex max-w-md flex-col gap-3 sm:mt-10 lg:max-w-lg">
+          <button
+            type="button"
+            onClick={() => setShowAdjust(!showAdjust)}
+            className="btn-secondary w-full"
+          >
+            Adjust Score
+          </button>
 
-        {showAdjust && (
-          <div className="animate-fade-in glass-subtle rounded-xl p-4 text-center text-sm text-white/70">
-            Staff override panel — connect to backend in production.
-          </div>
-        )}
+          {showAdjust && (
+            <div className="animate-fade-in glass-subtle rounded-xl p-4 text-center text-sm text-white/70">
+              Staff override panel — connect to backend in production.
+            </div>
+          )}
 
-        <button
-          type="button"
-          onClick={() => setConfirmed(true)}
-          className={`btn-primary w-full ${confirmed ? "opacity-80" : ""}`}
-          disabled={confirmed}
-        >
-          {confirmed ? "✓ Result Confirmed" : "Confirm Result"}
-        </button>
+          <button
+            type="button"
+            onClick={() => setConfirmed(true)}
+            className={`btn-primary w-full ${confirmed ? "opacity-80" : ""}`}
+            disabled={confirmed}
+          >
+            {confirmed ? "✓ Result Confirmed" : "Confirm Result"}
+          </button>
 
-        {confirmed && (
-          <Link href="/leaderboard" className="btn-primary w-full text-center">
-            View Updated Leaderboard →
-          </Link>
-        )}
-      </div>
+          {confirmed && (
+            <Link href="/leaderboard" className="btn-primary w-full text-center">
+              View Updated Leaderboard →
+            </Link>
+          )}
+        </div>
+      )}
     </div>
   );
 }
