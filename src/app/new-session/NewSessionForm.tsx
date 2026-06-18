@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { createRageSession } from "@/app/actions/sessions";
 import { useStopwatch } from "@/hooks/useStopwatch";
 
@@ -23,8 +24,9 @@ export function NewSessionForm({ cabins }: NewSessionFormProps) {
   const [afterPreview, setAfterPreview] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
-  const time = useStopwatch(step === "active");
+  const time = useStopwatch(step === "active" && !isPending);
 
   const selectedCabin = cabins.find((c) => c.id === cabinId);
 
@@ -51,7 +53,8 @@ export function NewSessionForm({ cabins }: NewSessionFormProps) {
     formData.set("camperName", camperName.trim());
     startTransition(async () => {
       try {
-        await createRageSession(formData);
+        const sessionId = await createRageSession(formData);
+        router.push(`/rage-room/${sessionId}`);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Something went wrong");
       }

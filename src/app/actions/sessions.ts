@@ -1,6 +1,5 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { randomUUID } from "crypto";
 import sharp from "sharp";
@@ -63,7 +62,7 @@ async function findOrCreateCamper(name: string, cabinId: string): Promise<string
   return id;
 }
 
-export async function createRageSession(formData: FormData): Promise<void> {
+export async function createRageSession(formData: FormData): Promise<string> {
   const authed = await getAuthSession();
   if (!authed) throw new Error("Unauthorized");
 
@@ -132,7 +131,7 @@ export async function createRageSession(formData: FormData): Promise<void> {
     totalScore: aiResult.totalScore,
   });
 
-  redirect(`/rage-room/${sessionId}`);
+  return sessionId;
 }
 
 export async function updateSessionScores(
