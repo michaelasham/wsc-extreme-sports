@@ -3,7 +3,7 @@ import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 
 const COOKIE_NAME = "wsc_auth";
-const EXPIRY_SECONDS = 12 * 60 * 60; // 12 hours
+const EXPIRY_SECONDS = 30 * 24 * 60 * 60; // 30 days
 
 function getKey(): Uint8Array {
   const secret = process.env.SESSION_SECRET;
