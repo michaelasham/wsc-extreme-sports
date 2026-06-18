@@ -10,10 +10,10 @@ export async function getCabinLeaderboard(): Promise<Cabin[]> {
       c.number,
       c.name,
       c.mascot,
-      COALESCE(SUM(s.total_score), 0)::int AS points,
-      ROW_NUMBER() OVER (ORDER BY COALESCE(SUM(s.total_score), 0) DESC)::int AS rank
+      SUM(s.total_score)::int AS points,
+      ROW_NUMBER() OVER (ORDER BY SUM(s.total_score) DESC)::int AS rank
     FROM cabins c
-    LEFT JOIN rage_sessions s ON s.cabin_id = c.id AND s.status = 'confirmed'
+    INNER JOIN rage_sessions s ON s.cabin_id = c.id AND s.status = 'confirmed'
     GROUP BY c.id, c.number, c.name, c.mascot
     ORDER BY rank
   `);

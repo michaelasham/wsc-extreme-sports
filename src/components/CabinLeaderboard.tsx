@@ -65,6 +65,16 @@ function CabinCard({ cabin, index }: { cabin: Cabin; index: number }) {
 }
 
 export function CabinLeaderboard({ cabins }: CabinLeaderboardProps) {
+  if (cabins.length === 0) {
+    return (
+      <div className="glass-card p-10 text-center text-white/40">
+        <p className="text-4xl mb-3">🏕️</p>
+        <p className="font-semibold text-white/60">No sessions yet</p>
+        <p className="mt-1 text-sm">Cabin rankings will appear here after the first confirmed session.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3 sm:space-y-4 lg:space-y-5">
       {cabins.map((cabin, index) => (
