@@ -28,12 +28,9 @@ function CabinCard({ cabin, index }: { cabin: Cabin; index: number }) {
 
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-          <span className="text-2xl sm:text-3xl lg:text-4xl" role="img" aria-hidden>
-            {cabin.mascot}
-          </span>
           <div>
             <h3 className="text-lg font-bold text-white sm:text-xl lg:text-2xl">
-              Cabin {cabin.number} — {cabin.name}
+              Cabin {cabin.number}
             </h3>
             {cabin.isHighlighted && (
               <p className="text-xs font-medium text-orange-300 sm:text-sm">

@@ -81,7 +81,7 @@ export function NewSessionForm({ cabins }: NewSessionFormProps) {
               </option>
               {cabins.map((c) => (
                 <option key={c.id} value={c.id} className="bg-gray-900">
-                  {c.mascot} Cabin {c.number} — {c.name}
+                  Cabin {c.number}
                 </option>
               ))}
             </select>
@@ -122,7 +122,7 @@ export function NewSessionForm({ cabins }: NewSessionFormProps) {
             Now scoring
           </p>
           <p className="mt-0.5 text-lg font-bold text-white">
-            {camperName} · {selectedCabin?.mascot} Cabin {selectedCabin?.number}
+            {camperName} · Cabin {selectedCabin?.number}
           </p>
         </div>
 
