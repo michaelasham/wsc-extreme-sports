@@ -4,6 +4,7 @@ import { GallerySearch } from "@/components/GallerySearch";
 import Link from "next/link";
 import type { Metadata } from "next";
 
+export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Camper Gallery — WSC Extreme Sports" };
 
 interface CamperRow {
