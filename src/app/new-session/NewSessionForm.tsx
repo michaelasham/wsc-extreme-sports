@@ -31,7 +31,7 @@ export function NewSessionForm({ cabins }: { cabins: Cabin[] }) {
   const [step, setStep] = useState<Step>("setup");
   const [cabinId, setCabinId] = useState("");
   const [camperName, setCamperName] = useState("");
-  const [captureInterval, setCaptureInterval] = useState<10 | 15>(15);
+  const [captureInterval] = useState<5>(5);
   const [highlightEnabled, setHighlightEnabled] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -130,27 +130,6 @@ export function NewSessionForm({ cabins }: { cabins: Cabin[] }) {
                   isCapturing={false}
                 />
               )}
-              <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-white/50">
-                  Capture interval
-                </p>
-                <div className="flex gap-2">
-                  {([10, 15] as const).map((s) => (
-                    <button
-                      key={s}
-                      type="button"
-                      onClick={() => setCaptureInterval(s)}
-                      className={`flex-1 rounded-lg border py-2 text-sm font-semibold transition-colors ${
-                        captureInterval === s
-                          ? "border-orange-400/50 bg-orange-500/20 text-orange-300"
-                          : "border-white/20 bg-white/5 text-white/50 hover:bg-white/10"
-                      }`}
-                    >
-                      {s}s
-                    </button>
-                  ))}
-                </div>
-              </div>
               <SessionCaptureStatus
                 isPermissionGranted={capture.isPermissionGranted}
                 isCapturing={false}
