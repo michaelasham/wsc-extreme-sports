@@ -48,8 +48,6 @@ async function getCamperGallery(slug: string) {
 
   if (!sessions.length) return null;
 
-  const sessionIds = sessions.map((s) => s.session_id);
-
   const highlights = (await db.execute(sql`
     SELECT
       sh.session_id,
@@ -57,7 +55,9 @@ async function getCamperGallery(slug: string) {
       sh.capture_order
     FROM session_highlights sh
     JOIN media m ON m.id = sh.media_id
-    WHERE sh.session_id = ANY(${sessionIds})
+    JOIN rage_sessions rs ON rs.id = sh.session_id
+    JOIN campers ca ON ca.id = rs.camper_id
+    WHERE ca.name ILIKE ${name}
     ORDER BY sh.session_id, sh.capture_order
   `)) as unknown as HighlightRow[];
 
