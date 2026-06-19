@@ -2,6 +2,7 @@
 
 import { Badge } from "@/components/Badge";
 import { LeaderboardRankBadge } from "@/components/LeaderboardRankBadge";
+import { MiniRageMeter } from "@/components/MiniRageMeter";
 import { useInView } from "@/hooks/useInView";
 import type { Cabin } from "@/lib/types";
 
@@ -9,7 +10,7 @@ interface CabinLeaderboardProps {
   cabins: Cabin[];
 }
 
-function CabinCard({ cabin, index }: { cabin: Cabin; index: number }) {
+function CabinCard({ cabin, index, maxPoints }: { cabin: Cabin; index: number; maxPoints: number }) {
   const { ref, isInView } = useInView();
 
   return (
@@ -47,6 +48,7 @@ function CabinCard({ cabin, index }: { cabin: Cabin; index: number }) {
             ))}
           </div>
         )}
+        <MiniRageMeter points={cabin.points} maxPoints={maxPoints} delay={index * 80 + 200} />
       </div>
 
       <div className="text-right">
@@ -72,10 +74,12 @@ export function CabinLeaderboard({ cabins }: CabinLeaderboardProps) {
     );
   }
 
+  const maxPoints = cabins[0]?.points ?? 1;
+
   return (
     <div className="space-y-3 sm:space-y-4 lg:space-y-5">
       {cabins.map((cabin, index) => (
-        <CabinCard key={cabin.id} cabin={cabin} index={index} />
+        <CabinCard key={cabin.id} cabin={cabin} index={index} maxPoints={maxPoints} />
       ))}
     </div>
   );

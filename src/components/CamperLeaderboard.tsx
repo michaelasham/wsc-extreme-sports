@@ -1,6 +1,7 @@
 "use client";
 
 import { LeaderboardRankBadge } from "@/components/LeaderboardRankBadge";
+import { MiniRageMeter } from "@/components/MiniRageMeter";
 import { useInView } from "@/hooks/useInView";
 import type { Camper } from "@/lib/types";
 
@@ -8,7 +9,7 @@ interface CamperLeaderboardProps {
   campers: Camper[];
 }
 
-function CamperCard({ camper, index }: { camper: Camper; index: number }) {
+function CamperCard({ camper, index, maxPoints }: { camper: Camper; index: number; maxPoints: number }) {
   const { ref, isInView } = useInView();
 
   return (
@@ -37,6 +38,7 @@ function CamperCard({ camper, index }: { camper: Camper; index: number }) {
             Latest Rage Room session
           </p>
         )}
+        <MiniRageMeter points={camper.points} maxPoints={maxPoints} delay={index * 80 + 200} />
       </div>
 
       <div className="text-right">
@@ -62,10 +64,12 @@ export function CamperLeaderboard({ campers }: CamperLeaderboardProps) {
     );
   }
 
+  const maxPoints = campers[0]?.points ?? 1;
+
   return (
     <div className="space-y-3 sm:space-y-4 lg:space-y-5">
       {campers.map((camper, index) => (
-        <CamperCard key={camper.id} camper={camper} index={index} />
+        <CamperCard key={camper.id} camper={camper} index={index} maxPoints={maxPoints} />
       ))}
     </div>
   );

@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { sql } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { AnimatedRageMeter } from "@/components/AnimatedRageMeter";
 
 interface SessionRow {
   session_id: string;
@@ -150,6 +151,13 @@ export default async function CamperGalleryPage({
                   </div>
                 )}
               </div>
+
+              {/* Rage meter */}
+              {s.ai_overall_score != null && (
+                <div className="px-5 py-4 border-t border-white/10">
+                  <AnimatedRageMeter score={s.ai_overall_score} maxScore={100} />
+                </div>
+              )}
 
               {/* Before / After */}
               {(s.before_path || s.after_path) && (
