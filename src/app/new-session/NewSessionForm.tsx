@@ -9,7 +9,7 @@ import { CameraPreview } from "@/components/CameraPreview";
 import { SessionCaptureStatus } from "@/components/SessionCaptureStatus";
 import { SessionHighlightsGallery } from "@/components/SessionHighlightsGallery";
 
-type Step = "setup" | "before" | "active" | "after";
+type Step = "setup" | "active" | "review";
 
 interface Cabin {
   id: string;
@@ -18,14 +18,19 @@ interface Cabin {
   mascot: string;
 }
 
+function dataUrlToBlob(dataUrl: string): Blob {
+  const [header, b64] = dataUrl.split(",");
+  const mime = header.match(/:(.*?);/)?.[1] ?? "image/jpeg";
+  const bytes = atob(b64);
+  const arr = new Uint8Array(bytes.length);
+  for (let j = 0; j < bytes.length; j++) arr[j] = bytes.charCodeAt(j);
+  return new Blob([arr], { type: mime });
+}
+
 export function NewSessionForm({ cabins }: { cabins: Cabin[] }) {
   const [step, setStep] = useState<Step>("setup");
   const [cabinId, setCabinId] = useState("");
   const [camperName, setCamperName] = useState("");
-  const [beforeFile, setBeforeFile] = useState<File | null>(null);
-  const [beforePreview, setBeforePreview] = useState<string | null>(null);
-  const [afterFile, setAfterFile] = useState<File | null>(null);
-  const [afterPreview, setAfterPreview] = useState<string | null>(null);
   const [captureInterval, setCaptureInterval] = useState<10 | 15>(15);
   const [highlightEnabled, setHighlightEnabled] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -36,13 +41,22 @@ export function NewSessionForm({ cabins }: { cabins: Cabin[] }) {
   const time = useStopwatch(step === "active" && !isPending);
   const selectedCabin = cabins.find((c) => c.id === cabinId);
 
-  // ── Step 1: setup ───────────────────────────────────────────────────────────
+  // ── Step 1: setup + camera config ───────────────────────────────────────────
   if (step === "setup") {
+    async function handleEnableCamera() {
+      const granted = await capture.requestPermission();
+      if (granted) setHighlightEnabled(true);
+    }
+
     return (
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          if (cabinId && camperName.trim()) setStep("before");
+          if (!cabinId || !camperName.trim()) return;
+          if (highlightEnabled && capture.isPermissionGranted) {
+            capture.startCapture(captureInterval);
+          }
+          setStep("active");
         }}
         className="mt-8 space-y-5"
       >
@@ -82,60 +96,15 @@ export function NewSessionForm({ cabins }: { cabins: Cabin[] }) {
             />
           </div>
         </div>
-        <button
-          type="submit"
-          disabled={!cabinId || !camperName.trim()}
-          className="btn-primary w-full disabled:opacity-40"
-        >
-          Continue →
-        </button>
-      </form>
-    );
-  }
 
-  // ── Step 2: before photo + optional camera ───────────────────────────────────
-  if (step === "before") {
-    async function handleEnableCamera() {
-      const granted = await capture.requestPermission();
-      if (granted) setHighlightEnabled(true);
-    }
-
-    return (
-      <div className="mt-8 space-y-5">
-        {/* Camper header */}
-        <div className="glass-card px-5 py-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-orange-400/80">
-            Next up
-          </p>
-          <p className="mt-0.5 text-lg font-bold text-white">
-            {camperName} · Cabin {selectedCabin?.number}
-          </p>
-        </div>
-
-        {/* Before photo */}
-        <div className="glass-card p-6 space-y-3">
-          <h2 className="text-xs font-semibold uppercase tracking-[0.25em] text-orange-400/80">
-            Before Photo
-          </h2>
-          <PhotoUpload
-            label="Before"
-            preview={beforePreview}
-            onChange={(e) => {
-              const f = e.target.files?.[0] ?? null;
-              setBeforeFile(f);
-              setBeforePreview(f ? URL.createObjectURL(f) : null);
-            }}
-          />
-        </div>
-
-        {/* Highlight capture option */}
+        {/* Session highlights / camera setup */}
         <div className="glass-card p-5 space-y-4">
           <div className="flex items-start justify-between gap-4">
             <div>
               <h3 className="text-sm font-bold text-white">Session Highlights</h3>
               <p className="mt-0.5 text-xs text-white/50">
-                Auto-capture still images during the session for recap and camp memories.
-                Staff can delete any image before saving.
+                Auto-capture stills during the session. The first and last frame become
+                the before &amp; after photos.
               </p>
             </div>
             {!highlightEnabled && (
@@ -204,35 +173,20 @@ export function NewSessionForm({ cabins }: { cabins: Cabin[] }) {
         </div>
 
         <button
-          type="button"
-          disabled={!beforePreview}
-          onClick={() => {
-            if (highlightEnabled && capture.isPermissionGranted) {
-              capture.startCapture(captureInterval);
-            }
-            setStep("active");
-          }}
+          type="submit"
+          disabled={!cabinId || !camperName.trim()}
           className="btn-primary w-full disabled:opacity-40"
         >
           Start Session →
         </button>
-
-        <button
-          type="button"
-          onClick={() => setStep("setup")}
-          className="btn-secondary w-full text-sm"
-        >
-          ← Back
-        </button>
-      </div>
+      </form>
     );
   }
 
-  // ── Step 3: active session ───────────────────────────────────────────────────
+  // ── Step 2: active session ───────────────────────────────────────────────────
   if (step === "active") {
     return (
       <div className="mt-8 space-y-5">
-        {/* Header with stopwatch */}
         <div className="glass-card p-5 flex items-center justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-orange-400/80">
@@ -252,7 +206,6 @@ export function NewSessionForm({ cabins }: { cabins: Cabin[] }) {
           </div>
         </div>
 
-        {/* Camera preview */}
         {highlightEnabled && capture.isPermissionGranted && (
           <div className="glass-card p-4 space-y-3">
             <CameraPreview
@@ -272,15 +225,15 @@ export function NewSessionForm({ cabins }: { cabins: Cabin[] }) {
           </div>
         )}
 
-        {/* Hidden canvas for captures */}
         <canvas ref={capture.canvasRef} className="hidden" />
 
         <button
           type="button"
           onClick={() => {
+            capture.captureFrame();
             capture.stopCapture();
             capture.stopStream();
-            setStep("after");
+            setStep("review");
           }}
           className="btn-primary w-full"
         >
@@ -290,27 +243,25 @@ export function NewSessionForm({ cabins }: { cabins: Cabin[] }) {
     );
   }
 
-  // ── Step 4: after photo + highlights + submit ────────────────────────────────
+  // ── Step 3: review highlights + submit ──────────────────────────────────────
+  const firstHighlight = capture.highlights[0] ?? null;
+  const lastHighlight = capture.highlights[capture.highlights.length - 1] ?? null;
+  const canSubmit = capture.highlights.length >= 1 && !isPending;
+
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        if (!beforeFile || !afterFile) return;
+        if (!firstHighlight || !lastHighlight) return;
         setError(null);
         const formData = new FormData();
         formData.set("cabinId", cabinId);
         formData.set("camperName", camperName.trim());
-        formData.set("before", beforeFile);
-        formData.set("after", afterFile);
+        formData.set("before", dataUrlToBlob(firstHighlight.dataUrl), "before.jpg");
+        formData.set("after", dataUrlToBlob(lastHighlight.dataUrl), "after.jpg");
 
-        // Append all highlights — server picks evenly-spaced subset for Gemini and stores all
         capture.highlights.forEach((h, i) => {
-          const [header, b64] = h.dataUrl.split(",");
-          const mime = header.match(/:(.*?);/)?.[1] ?? "image/jpeg";
-          const bytes = atob(b64);
-          const arr = new Uint8Array(bytes.length);
-          for (let j = 0; j < bytes.length; j++) arr[j] = bytes.charCodeAt(j);
-          formData.set(`highlight${i}`, new Blob([arr], { type: mime }));
+          formData.set(`highlight${i}`, dataUrlToBlob(h.dataUrl), `highlight${i}.jpg`);
         });
 
         startTransition(async () => {
@@ -324,34 +275,59 @@ export function NewSessionForm({ cabins }: { cabins: Cabin[] }) {
       }}
       className="mt-8 space-y-5"
     >
-      {/* After photo */}
-      <div className="glass-card p-6 space-y-3">
-        <h2 className="text-xs font-semibold uppercase tracking-[0.25em] text-orange-400/80">
-          After Photo
-        </h2>
-        <PhotoUpload
-          label="After"
-          preview={afterPreview}
-          onChange={(e) => {
-            const f = e.target.files?.[0] ?? null;
-            setAfterFile(f);
-            setAfterPreview(f ? URL.createObjectURL(f) : null);
-          }}
-        />
-      </div>
-
-      {/* Highlights gallery */}
-      {capture.highlights.length > 0 && (
+      {/* Before / After derived from highlights */}
+      {firstHighlight && (
         <div className="glass-card p-5 space-y-3">
           <h2 className="text-xs font-semibold uppercase tracking-[0.25em] text-orange-400/80">
-            Session Highlights ({capture.highlights.length})
+            Before &amp; After
           </h2>
-          <SessionHighlightsGallery
-            highlights={capture.highlights}
-            onRemove={capture.removeHighlight}
-          />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={firstHighlight.dataUrl}
+                alt="Before"
+                className="aspect-[4/3] w-full rounded-xl object-cover"
+              />
+              <p className="text-center text-xs font-semibold uppercase tracking-wider text-white/50">
+                Before
+              </p>
+            </div>
+            <div className="space-y-1.5">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={lastHighlight!.dataUrl}
+                alt="After"
+                className="aspect-[4/3] w-full rounded-xl object-cover"
+              />
+              <p className="text-center text-xs font-semibold uppercase tracking-wider text-white/50">
+                After
+              </p>
+            </div>
+          </div>
+          {capture.highlights.length === 1 && (
+            <p className="text-center text-xs text-white/30">
+              Only one highlight captured — same frame used for before &amp; after.
+            </p>
+          )}
         </div>
       )}
+
+      {/* Highlights gallery */}
+      <div className="glass-card p-5 space-y-3">
+        <h2 className="text-xs font-semibold uppercase tracking-[0.25em] text-orange-400/80">
+          Session Highlights ({capture.highlights.length})
+        </h2>
+        <SessionHighlightsGallery
+          highlights={capture.highlights}
+          onRemove={capture.removeHighlight}
+        />
+        {capture.highlights.length === 0 && (
+          <p className="text-center text-xs text-orange-400/70">
+            No highlights captured — go back and run the session with camera enabled.
+          </p>
+        )}
+      </div>
 
       {error && (
         <p className="rounded-lg bg-red-500/10 px-4 py-3 text-sm text-red-400">
@@ -361,7 +337,7 @@ export function NewSessionForm({ cabins }: { cabins: Cabin[] }) {
 
       <button
         type="submit"
-        disabled={isPending || !afterPreview}
+        disabled={!canSubmit}
         className="btn-primary w-full disabled:opacity-40"
       >
         {isPending ? "Uploading & scoring with AI…" : "Submit for AI Scoring →"}
@@ -375,38 +351,5 @@ export function NewSessionForm({ cabins }: { cabins: Cabin[] }) {
         ← Back to session
       </button>
     </form>
-  );
-}
-
-function PhotoUpload({
-  label,
-  preview,
-  onChange,
-}: {
-  label: string;
-  preview: string | null;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-}) {
-  return (
-    <label className="block cursor-pointer">
-      <div className="relative aspect-[4/3] overflow-hidden rounded-xl border-2 border-dashed border-white/20 bg-white/5 hover:border-orange-400/50 transition-colors">
-        {preview ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={preview} alt={label} className="h-full w-full object-cover" />
-        ) : (
-          <div className="flex h-full flex-col items-center justify-center gap-2">
-            <span className="text-3xl opacity-40">📷</span>
-            <span className="text-xs text-white/40">Tap to upload</span>
-          </div>
-        )}
-        <input
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          required
-          onChange={onChange}
-          className="absolute inset-0 opacity-0 cursor-pointer"
-        />
-      </div>
-    </label>
   );
 }

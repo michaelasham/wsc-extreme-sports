@@ -114,6 +114,9 @@ export function useHighlightCapture() {
       if (intervalRef.current) clearInterval(intervalRef.current);
       setIntervalSeconds(seconds);
       setIsCapturing(true);
+
+      // Capture immediately so the first frame becomes the "before" photo
+      captureFrame();
       setNextCaptureIn(seconds);
 
       // Countdown ticker (updates every second)
