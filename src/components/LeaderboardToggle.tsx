@@ -17,18 +17,6 @@ export function LeaderboardToggle({ mode, onChange }: LeaderboardToggleProps) {
       <button
         type="button"
         role="tab"
-        aria-selected={mode === "cabin"}
-        onClick={() => onChange("cabin")}
-        className={[
-          "leaderboard-toggle-btn flex-1 rounded-xl px-3 py-2.5 text-xs font-bold uppercase tracking-wide transition-all sm:px-4 sm:py-3 sm:text-sm",
-          mode === "cabin" ? "leaderboard-toggle-btn--active" : "",
-        ].join(" ")}
-      >
-        Cabin Leaderboard
-      </button>
-      <button
-        type="button"
-        role="tab"
         aria-selected={mode === "camper"}
         onClick={() => onChange("camper")}
         className={[
@@ -37,6 +25,18 @@ export function LeaderboardToggle({ mode, onChange }: LeaderboardToggleProps) {
         ].join(" ")}
       >
         Camper Leaderboard
+      </button>
+      <button
+        type="button"
+        role="tab"
+        aria-selected={mode === "cabin"}
+        onClick={() => onChange("cabin")}
+        className={[
+          "leaderboard-toggle-btn flex-1 rounded-xl px-3 py-2.5 text-xs font-bold uppercase tracking-wide transition-all sm:px-4 sm:py-3 sm:text-sm",
+          mode === "cabin" ? "leaderboard-toggle-btn--active" : "",
+        ].join(" ")}
+      >
+        Cabin Leaderboard
       </button>
     </div>
   );

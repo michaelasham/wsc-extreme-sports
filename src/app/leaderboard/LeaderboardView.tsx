@@ -14,7 +14,7 @@ interface LeaderboardViewProps {
 }
 
 export function LeaderboardView({ cabins, campers }: LeaderboardViewProps) {
-  const [mode, setMode] = useState<LeaderboardMode>("cabin");
+  const [mode, setMode] = useState<LeaderboardMode>("camper");
   const reducedMotion = usePrefersReducedMotion();
 
   return (
