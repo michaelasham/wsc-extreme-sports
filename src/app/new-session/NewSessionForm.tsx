@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createRageSession } from "@/app/actions/sessions";
 import { useStopwatch } from "@/hooks/useStopwatch";
@@ -35,6 +35,8 @@ export function NewSessionForm({ cabins }: { cabins: Cabin[] }) {
   const [highlightEnabled, setHighlightEnabled] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [progress, setProgress] = useState<{ pct: number; label: string } | null>(null);
+  const progressTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const router = useRouter();
 
   const capture = useHighlightCapture();
@@ -264,11 +266,39 @@ export function NewSessionForm({ cabins }: { cabins: Cabin[] }) {
           formData.set(`highlight${i}`, dataUrlToBlob(h.dataUrl), `highlight${i}.jpg`);
         });
 
+        // Animate progress through realistic stages; hold at 88% until server responds
+        const STAGES = [
+          { pct: 30, label: "Uploading photos…", ms: 1200 },
+          { pct: 55, label: "Processing images…", ms: 1500 },
+          { pct: 88, label: "Scoring with AI…", ms: 9000 },
+        ] as const;
+        setProgress({ pct: 0, label: STAGES[0].label });
+        let stageIdx = 0;
+        let framePct = 0;
+        const TICK = 50;
+        progressTimer.current = setInterval(() => {
+          const stage = STAGES[stageIdx];
+          if (!stage) return;
+          const prevPct = stageIdx === 0 ? 0 : STAGES[stageIdx - 1].pct;
+          framePct += (stage.pct - prevPct) / (stage.ms / TICK);
+          const pct = Math.min(prevPct + framePct, stage.pct);
+          setProgress({ pct: Math.round(pct), label: stage.label });
+          if (pct >= stage.pct && stageIdx < STAGES.length - 1) {
+            stageIdx++;
+            framePct = 0;
+            setProgress({ pct: Math.round(pct), label: STAGES[stageIdx].label });
+          }
+        }, TICK);
+
         startTransition(async () => {
           try {
             const sessionId = await createRageSession(formData);
+            clearInterval(progressTimer.current!);
+            setProgress({ pct: 100, label: "Done!" });
             router.push(`/rage-room/${sessionId}`);
           } catch (err) {
+            clearInterval(progressTimer.current!);
+            setProgress(null);
             setError(err instanceof Error ? err.message : "Something went wrong");
           }
         });
@@ -335,21 +365,40 @@ export function NewSessionForm({ cabins }: { cabins: Cabin[] }) {
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={!canSubmit}
-        className="btn-primary w-full disabled:opacity-40"
-      >
-        {isPending ? "Uploading & scoring with AI…" : "Submit for AI Scoring →"}
-      </button>
+      {progress !== null ? (
+        <div className="glass-card p-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-white/70">{progress.label}</span>
+            <span className="font-mono text-sm font-bold text-orange-400">
+              {progress.pct}%
+            </span>
+          </div>
+          <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-orange-500 to-orange-400 transition-[width] duration-75 ease-linear"
+              style={{ width: `${progress.pct}%` }}
+            />
+          </div>
+        </div>
+      ) : (
+        <>
+          <button
+            type="submit"
+            disabled={!canSubmit}
+            className="btn-primary w-full disabled:opacity-40"
+          >
+            Submit for AI Scoring →
+          </button>
 
-      <button
-        type="button"
-        onClick={() => setStep("active")}
-        className="btn-secondary w-full text-sm"
-      >
-        ← Back to session
-      </button>
+          <button
+            type="button"
+            onClick={() => setStep("active")}
+            className="btn-secondary w-full text-sm"
+          >
+            ← Back to session
+          </button>
+        </>
+      )}
     </form>
   );
 }
